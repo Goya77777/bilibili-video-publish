@@ -1,0 +1,33 @@
+{
+  "name": "bilibili-video-publish",
+  "version": "1.0.0",
+  "description": "WorkBuddy skill：批量投稿到 B站三连绑定的真实 UP 账号，并把投稿时间/BVID/原始文件名/品牌/项目回填到腾讯文档",
+  "bin": {
+    "bilibili-video-publish": "bin/install.js"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "assets",
+    "references",
+    "scripts",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=16.7"
+  },
+  "keywords": [
+    "workbuddy",
+    "skill",
+    "bilibili",
+    "bilibili-sanlian",
+    "tencent-docs",
+    "automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Goya77777/bilibili-video-publish.git"
+  },
+  "license": "MIT"
+}

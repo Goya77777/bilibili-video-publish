@@ -32,6 +32,17 @@ scan → plan → dedupe → manifest → upload → record → tdocs_fill → v
 
 ## 安装
 
+### 一句话安装（推荐）
+
+```bash
+npx github:Goya77777/bilibili-video-publish install
+```
+
+它会：拷文件到 `~/.workbuddy/skills/bilibili-video-publish` → 缺配置就从 sample 生成骨架 → 自检 Python 与 CLI →
+打印还差哪三步。**幂等**：重复执行等于升级，只覆盖代码，`assets/groups.json` 和 `mybatch.json` **永不覆盖**。
+
+> 不想经手 Node？下面三种纯文件方式等价。
+
 这是一个 **WorkBuddy skill**（本质是「一个目录：`SKILL.md` + `scripts/`」），所以安装 = **把仓库放到 skills 目录下**。
 
 技能目录：`~/.workbuddy/skills/<技能名>/`
@@ -66,6 +77,9 @@ npx degit Goya77777/bilibili-video-publish "$HOME/.workbuddy/skills/bilibili-vid
 
 ### 装完还要做三件事（光拷文件不够）
 
+> 用 `npx … install` 装的，**前两步的骨架已经自动生成**（`assets/groups.json`、`mybatch.json`），你只需填值。
+> 手动拷文件的，先执行下面两条：
+
 ```bash
 cd ~/.workbuddy/skills/bilibili-video-publish
 cp assets/groups.sample.json assets/groups.json    # 1) 填你自己的腾讯文档 fileId / sheetId
@@ -92,7 +106,8 @@ python bili_publish.py groups      # 能列出你填的运营组，说明配置�
 
 | 方式 | 可用 | 说明 |
 |---|---|---|
-| `npm install bilibili-video-publish` | ❌ | **没有发布到 npm registry**，也不打算发 |
+| **`npx github:Goya77777/bilibili-video-publish install`** | ✅ **推荐** | 从 GitHub 直接跑仓库里的安装器，**无需发布到 npm**；含建配置骨架 + 自检 |
+| `npm install bilibili-video-publish` | ❌ | **没有发布到 npm registry**（也不打算发，见下） |
 | `npx degit Goya77777/... <目标目录>` | ✅ | npm 系工具，直接从 GitHub 拉文件，**无需发布**，就是上面的「方式二」 |
 | `npm install github:Goya77777/...` | ⚠️ 别用 | 只会装进 `node_modules/`，**不会注册成 skill**，等于没装 |
 | 发到 npm + `postinstall` 自动拷进 skills 目录 | ⚠️ 不建议 | 往全局应用目录写文件，容易踩权限和多版本问题，安装行为也不可预期 |
@@ -147,6 +162,9 @@ python tdocs_fill.py --record mybatch_record.json --group 运营组名          
 
 ```
 ├── SKILL.md                       # 给智能体看的完整作业流程
+├── package.json                   # 让 `npx github:… install` 可用（不发布到 npm）
+├── bin/
+│   └── install.js                 # 安装器：拷文件 + 建配置骨架 + 自检（幂等，可当升级）
 ├── scripts/
 │   ├── bili_publish.py            # 主 CLI
 │   ├── tdocs_fill.py              # 腾讯文档写入（mcporter 通道，按表头名映射 + 读回校验）
