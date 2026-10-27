@@ -1,0 +1,25 @@
+# 本机真实配置，不进仓库（含内部文档 ID / 组名 / 凭据路径）
+assets/groups.json
+
+# 批次产出与运行时产物
+*_inventory.json
+*_plan.json
+*_dedupe.json
+*_manifest.json
+*_run.json
+*_record.json
+*_record.csv
+*_record.tsv
+*_expected.json
+*_tdocs_cells.json
+*_verify.txt
+stage_*/
+lctmp/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# 系统
+.DS_Store
+Thumbs.db

@@ -1,0 +1,48 @@
+{
+  "batch": "20261026",
+  "group": "<运营组，如 运营X组>",
+  "outDir": "D:\\WB\\<工作区>\\.workbuddy",
+  "sources": [
+    {
+      "dir": "\\\\fileserver\\share\\<某个素材目录>",
+      "exts": [
+        ".mp4"
+      ],
+      "recursive": false
+    }
+  ],
+  "job": {
+    "accountId": "<三连广告账户ID>",
+    "mid": "<目标UP的MID>",
+    "categoryOne": 36,
+    "categoryTwo": 124,
+    "tags": [
+      "标签1",
+      "标签2"
+    ],
+    "maxPollMinutes": 90,
+    "pollIntervalSeconds": 20
+  },
+  "brand": "<品牌，投稿前与使用者确认>",
+  "project": "<项目，投稿前与使用者确认>",
+  "limitMB": 600,
+  "titles": {
+    "示例文件名.mp4": "稿件标题（≤80 字，不含绝对化用语）"
+  },
+  "record": {
+    "columns": [
+      "投稿时间",
+      "bvid",
+      "原始文件名称",
+      "品牌",
+      "项目"
+    ],
+    "timeFormat": "%Y-%m-%d %H:%M:%S"
+  },
+  "tdocs": {
+    "url": "https://docs.qq.com/sheet/<YOUR_FILE_ID>?tab=<SHEET_ID>",
+    "fileId": "<YOUR_FILE_ID>",
+    "sheetId": "<SHEET_ID>"
+  },
+  "credentials": "C:\\Users\\<用户名>\\AppData\\Local\\bilibili-sanlian-ads\\credentials.json"
+}

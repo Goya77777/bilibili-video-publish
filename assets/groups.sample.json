@@ -1,0 +1,10 @@
+{
+  "_说明": "运营组 → 投稿记录表定位。一个工作簿里往往「一组一个子表」：fileId 相同、sheetId 不同（sheetId 就是分享链接 ?tab= 后面那段）。复制成 groups.json 后填入你自己的。",
+  "运营X组": {
+    "tdocs": {
+      "url": "https://docs.qq.com/sheet/<YOUR_FILE_ID>?tab=<SHEET_ID>",
+      "fileId": "<YOUR_FILE_ID>",
+      "sheetId": "<SHEET_ID>"
+    }
+  }
+}
