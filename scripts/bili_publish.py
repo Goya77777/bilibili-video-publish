@@ -353,7 +353,7 @@ def cmd_plan(batch: Batch) -> int:
         rec = dict(it)
         rec["title"] = title
         if not title:
-            problems.append("缺标题（在 config.titles 里补）：%s" % it["name"])
+            problems.append("缺标题（跑 `titles` 导出待填表，或直接在 config.titles 里补）：%s" % it["name"])
         else:
             if len(title) > 80:
                 problems.append("标题超过 80 字：%s" % title)
@@ -381,6 +381,89 @@ def cmd_plan(batch: Batch) -> int:
         return 2
     log("")
     log("plan OK：%d 条标题全部通过。落盘：%s" % (len(planned), batch.p("plan.json")))
+    return 0
+
+
+def cmd_titles(batch: Batch, import_path: str = None) -> int:
+    """标题清单：导出「文件名 → 待填标题」表给人填；填好后 --import 写回 config.titles。"""
+    inv = batch.require("inventory.json", "scan")
+
+    # ---------- 导入模式：把填好的表写回 config.titles ----------
+    if import_path:
+        path = os.path.abspath(import_path)
+        if not os.path.exists(path):
+            log("找不到填好的表：%s" % path)
+            return 2
+        delim = "\t" if path.lower().endswith(".tsv") else ","
+        mapping, blank = {}, []
+        with io.open(path, "r", encoding="utf-8-sig", newline="") as f:
+            rd = csv.reader(f, delimiter=delim)
+            header = next(rd, None)
+            if not header:
+                log("表是空的：%s" % path)
+                return 2
+            for row in rd:
+                if not row or not (row[0] or "").strip():
+                    continue
+                name = row[0].strip()
+                title = (row[1].strip() if len(row) > 1 else "")
+                if title:
+                    mapping[name] = title
+                else:
+                    blank.append(name)
+
+        names = {i["name"] for i in inv["items"]}
+        unknown = [n for n in mapping if n not in names]
+        cfg = read_json(batch.path)
+        old = cfg.get("titles") or {}
+        old.update(mapping)
+        cfg["titles"] = old
+        write_json(batch.path, cfg)
+        log("已写回 config.titles：新增/更新 %d 条 → %s" % (len(mapping), batch.path))
+        if unknown:
+            log("⚠️ 表里有 %d 个文件名不在本批素材里（检查是否改了空格/扩展名）：" % len(unknown))
+            for n in unknown:
+                log("  ! " + n)
+        missing = sorted(names - set(old))
+        if missing:
+            log("⚠️ 还有 %d 条没有标题（`titles` 再导出会只剩这些）：" % len(missing))
+            for n in missing:
+                log("  ! " + n)
+        else:
+            log("✔ 全部素材都有标题了，可以跑 plan")
+        return 0 if not (missing or unknown) else 2
+
+    # ---------- 导出模式：给一张待填表 ----------
+    rows = []
+    for it in inv["items"]:
+        rows.append({"原始文件名称": it["name"], "标题": batch.titles.get(it["name"], "")})
+    filled = sum(1 for r in rows if r["标题"])
+    blank = len(rows) - filled
+
+    cols = ["原始文件名称", "标题"]
+    csv_path = batch.p("titles.csv")
+    with io.open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=cols)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tsv_path = batch.p("titles.tsv")
+    with io.open(tsv_path, "w", encoding="utf-8", newline="") as f:
+        f.write("\t".join(cols) + "\n")
+        for r in rows:
+            f.write("\t".join(r[c] for c in cols) + "\n")
+
+    log("标题清单：%d 条（已填 %d / 待填 %d）" % (len(rows), filled, blank))
+    log("  CSV %s" % csv_path)
+    log("  TSV %s" % tsv_path)
+    log("")
+    log("  %-6s %-52s %s" % ("状态", "原始文件名称", "标题"))
+    for r in rows:
+        log("  %-6s %-52s %s" % ("已填" if r["标题"] else "待填",
+                                 r["原始文件名称"][:52], r["标题"][:36]))
+    log("")
+    log("填好后写回配置：")
+    log("  python bili_publish.py titles --config <配置> --import %s" % csv_path)
     return 0
 
 
@@ -627,11 +710,13 @@ def cmd_groups(batch: Batch) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="通用 B站三连批量投稿 + 投稿记录导出")
-    ap.add_argument("command", choices=["scan", "plan", "dedupe", "manifest", "upload",
+    ap.add_argument("command", choices=["scan", "plan", "titles", "dedupe", "manifest", "upload",
                                         "record", "verify", "all", "status", "groups"])
     ap.add_argument("--config", default=None, help="批次配置 JSON（见 references/config.md）；groups 命令可省略")
     ap.add_argument("--group", default=None,
                     help="运营组（覆盖 config.group）；决定回填哪张投稿记录表")
+    ap.add_argument("--import", dest="import_path", default=None,
+                    help="titles 用：读入填好的 CSV/TSV，写回 config.titles")
     ap.add_argument("--start-row", type=int, default=None,
                     help="record 用：腾讯文档第一条数据行（覆盖 config.record.tdocsStartRow）")
     args = ap.parse_args(argv)
@@ -645,6 +730,9 @@ def main(argv=None) -> int:
     batch = Batch(args.config, args.group)
     if args.start_row:
         batch.record["tdocsStartRow"] = args.start_row
+
+    if args.command == "titles":
+        return cmd_titles(batch, args.import_path)
 
     steps = {"scan": cmd_scan, "plan": cmd_plan, "dedupe": cmd_dedupe, "manifest": cmd_manifest,
              "upload": cmd_upload, "record": cmd_record, "verify": cmd_verify, "status": cmd_status,

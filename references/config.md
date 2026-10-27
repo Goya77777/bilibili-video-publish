@@ -14,7 +14,8 @@
 | `sources` | ✅ | 素材来源数组，见下 |
 | `job` | ✅ | 投稿参数，见下 |
 | `limitMB` | | 单文件大小上限，默认 `600`；超限在 `plan` 阶段直接拦 |
-| `titles` | ✅ | `文件basename → 标题`。文件名必须**完整带扩展名**，全角/半角空格要与实际一致 |
+| `titles` | ✅ | `文件名（含扩展名） → 标题`。文件名必须**完整带扩展名**，全角/半角空格要与实际一致。
+|  |  | 不用手写：`bili_publish.py titles` 导出 CSV/TSV 填完再 `--import` 回来（会保留配置其他键）。 |
 | `record` | | 投稿记录导出设置，见下 |
 | `tdocs` | | 腾讯文档目标，见下 |
 | `credentials` | | 三连凭据路径，默认 `%LOCALAPPDATA%\bilibili-sanlian-ads\credentials.json` |

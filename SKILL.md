@@ -28,15 +28,16 @@ description: 通用「视频批量投稿 + 投稿记录回填」流程。把本�
 
 凭据过期只需 `refresh_token` 有效（30 天内刷新过）。**access_token 只有 24h，过期不算授权失效**，脚本会自动刷新，不用提前提醒用户。
 
-## 开工前必须先问清三件事（缺一不可）
+## 开工前必须先问清四件事（缺一不可）
 
-**在写配置、更在上传之前**，逐条向使用者确认，得到明确答复后再动手。三项都缺失时 `plan` 会直接拒绝放行。
+**在写配置、更在上传之前**，逐条向使用者确认，得到明确答复后再动手。前三项缺失时 `plan` 会直接拒绝放行；第四项靠这条流程约束（工具管不到）。
 
 | 必填 | 为什么要问 | 落到配置 |
 |---|---|---|
 | **运营组** | 决定回填**哪一张**投稿记录表（不同组表不同） | `group`（或命令行 `--group`） |
 | **品牌** | 投稿记录的必填字段 | `brand` |
 | **项目** | 投稿记录的必填字段 | `project` |
+| **标题由谁定** | 决定标题是**客户给的**还是**我拟的**；我拟的必须先在聊天里给你看过 | `titles`（见下节） |
 
 ```
 # 确认「运营组」后，先看这个组登记过哪张表
@@ -48,6 +49,27 @@ python bili_publish.py groups
 
 > 品牌 / 项目不要从文件名或目录名去猜——猜错了整张记录表的维度就是错的，问一句只要几秒。
 
+## 标题怎么来（两条路，都得先说清）
+
+**工具永远不自己编标题**：`config.titles` 是唯一来源，`plan` 只做校验（长度/重复/绝对化用语）。
+所以标题必须有一个明确的来源约定，别默认。
+
+| 路径 | 怎么走 |
+|---|---|
+| **A. 客户/使用者给现成标题** | 让对方按 `titles` 导出的表填，或直接把「文件名 → 标题」贴过来 |
+| **B. 我（agent）拟** | 拟完**先在聊天里列给使用者看**，明确说「这几条是我拟的，确认没问题我再写进配置」，得到确认后才落地 |
+
+```bash
+# 导出一张「文件名 → 待填标题」的表（CSV/TSV，用 Excel/WPS 填）
+python bili_publish.py titles --config mybatch.json
+
+# 填好后写回 config.titles（会保留配置里其他键）
+python bili_publish.py titles --config mybatch.json --import mybatch_titles.csv
+```
+
+`titles` 会自动带出已填的标题，所以它同时是一张**人工复核表**——投稿前扫一眼就能发现「哪条是客户定的、哪条是我拟的」。
+若素材文件名里已经带了标题编号（如 `_标题1 / _标题2`），那通常说明客户已有现成文案，**优先走 A，别自己拟**。
+
 ## 五分钟上手
 
 ```bash
@@ -56,14 +78,18 @@ cd <skill>/scripts
 # 1) 复制配置模板，改成这一批
 copy config.sample.json mybatch.json
 
-# 2) 先跑到校验，确认标题/大小都没问题（这一步不产生任何投稿）
+# 2) 扫描 + 导出待填标题表（把 CSV 发给使用者填，或自己拟完先给对方确认）
 python bili_publish.py scan   --config mybatch.json
+python bili_publish.py titles --config mybatch.json
+python bili_publish.py titles --config mybatch.json --import mybatch_titles.csv
+
+# 3) 校验（标题/大小/运营组/品牌/项目，这一步不产生任何投稿）
 python bili_publish.py plan   --config mybatch.json
 
-# 3) 一把梭：查重 → 清单 → 上传 → 导出记录
+# 4) 一把梭：查重 → 清单 → 上传 → 导出记录
 python bili_publish.py all    --config mybatch.json
 
-# 4) 独立复核（可随时跑）
+# 5) 独立复核（可随时跑）
 python bili_publish.py verify --config mybatch.json
 
 # 随时看进度
@@ -77,6 +103,7 @@ python bili_publish.py status --config mybatch.json
 | 步 | 命令 | 做什么 | 产出 |
 |---|---|---|---|
 | 1 | `scan` | 遍历素材目录，只收视频；超 `limitMB`（默认 600）会告警 | `<batch>_inventory.json` |
+| 1.5 | `titles` | 导出「文件名 → 待填标题」表 / 填好后 `--import` 写回 `config.titles` | `<batch>_titles.csv` / `.tsv` |
 | 2 | `plan` | **校验运营组/品牌/项目三个必填项**；逐条校验标题：缺失 / 超 80 字 / 重复 / 含绝对化用语；文件超限也拦 | `<batch>_plan.json` |
 | 3 | `dedupe` | 算 MD5，按 **MID + MD5** 查稿件库；已有的不会再投 | `<batch>_dedupe.json` |
 | 4 | `manifest` → `upload` | 生成上传清单，交 PowerShell 上传+建稿+轮询审核 | `<batch>_manifest.json`、`<batch>_run.json` |
@@ -89,7 +116,7 @@ python bili_publish.py status --config mybatch.json
 2. **上传用 `.ps1`，且只写纯 ASCII**。脚本做三件事：① 先复制到本地暂存再 PUT（直读 UNC 路径会抛 `UnauthorizedAccessException`）；② 令牌过期自动刷新；③ 每条进度原子落盘。
 3. **查重键是 MID + MD5**，不是文件名、也不是标题。同一条视频换个文件名重投，会被正确拦下。
 4. **`require_book_in_title` 恒为 false**。上传脚本里这个校验是**全局**的，会对每条都要求清单里的 `book` 出现在标题里；留空或非书名时一开就整批报错。标题合规性由 `plan` 负责。
-5. **不自动编标题**。标题是人写的，工具只做红线校验；`plan` 不通过就停，别硬传。
+5. **不自动编标题**。标题是人写的（或我拟、但你确认过的），工具只做红线校验；`plan` 不通过就停，别硬传。
 
 ## 回填腾讯文档（本流程的额外一步）
 
@@ -142,6 +169,7 @@ python tdocs_fill.py --record <batch>_record.json --group 运营X组 --dry-run  
 
 ## 铁律
 
+- **标题必须先落实来源**：要么使用者给的，要么我拟且经使用者确认；不许「默默拟好直接投」。
 - **投稿前必须跑 `plan`**，标题有红线问题就不传。绝对化用语的正则已处理「最后/最初/最近/最终」「第一个/第一段」这类**正常用法**，别为了绕校验去改标题。
 - **不要按标题判断重复**，一律 MID + MD5。
 - **`verify` 是双重复核**：稿件库有记录 ≠ 公开可见。两边都过才算成功。

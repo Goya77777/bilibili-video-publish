@@ -48,14 +48,18 @@ cd scripts
 cp ../assets/config.sample.json mybatch.json
 cp ../assets/groups.sample.json ../assets/groups.json   # 填入你自己的腾讯文档 fileId / sheetId
 
-# 2) 先校验，不产生任何投稿
-python bili_publish.py scan --config mybatch.json
+# 2) 扫描 + 导出待填标题表（发给人填，或自己拟完先给对方确认）
+python bili_publish.py scan   --config mybatch.json
+python bili_publish.py titles --config mybatch.json
+python bili_publish.py titles --config mybatch.json --import mybatch_titles.csv
+
+# 3) 校验，不产生任何投稿
 python bili_publish.py plan --config mybatch.json      # 标题/大小/必填项 不通过就停
 
-# 3) 一把梭：查重 → 清单 → 上传 → 导出记录
+# 4) 一把梭：查重 → 清单 → 上传 → 导出记录
 python bili_publish.py all --config mybatch.json
 
-# 4) 独立复核每个 BVID
+# 5) 独立复核每个 BVID
 python bili_publish.py verify --config mybatch.json
 
 # 随时看进度
@@ -95,6 +99,23 @@ python tdocs_fill.py --record mybatch_record.json --group 运营组名          
     ├── config.md                  # 配置字段逐项说明
     └── troubleshooting.md         # 报错对照表（含腾讯文档三类坑）
 ```
+
+## 标题怎么定
+
+工具**不生成标题**：`config.titles` 是唯一来源，只做红线校验。所以流程上必须先定「谁给标题」：
+
+| 路径 | 做法 |
+|---|---|
+| 客户/使用者给 | `titles` 导出表 → 对方填 → `--import` 写回 |
+| 自己拟 | 拟完**先给人看**，确认后才写进 `config.titles` |
+
+```bash
+python bili_publish.py titles --config mybatch.json                       # 导出（自动带出已填的）
+python bili_publish.py titles --config mybatch.json --import x_titles.csv # 写回
+```
+
+导出表同时是**人工复核表**：投稿前扫一眼就能分清哪条是客户定的、哪条是自己拟的。
+文件名里带 `_标题1 / _标题2` 这类编号，通常说明客户已有现成文案——优先用客户的，别自己拟。
 
 ## 标题红线
 
