@@ -28,7 +28,7 @@ scan → plan → dedupe → manifest → upload → record → tdocs_fill → v
 ## 安装
 
 ```bash
-git clone https://github.com/<you>/bilibili-video-publish.git
+git clone https://github.com/Goya77777/bilibili-video-publish.git
 cp -r bilibili-video-publish ~/.workbuddy/skills/     # 作为 WorkBuddy skill 使用
 ```
 
