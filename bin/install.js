@@ -28,16 +28,12 @@ const SKILL_NAME = "bilibili-video-publish";
 // 装的时候不带的：仓库/包管理/构建产物
 const SKIP_TOP = new Set([
   ".git", ".github", "node_modules", "bin", "package.json", "package-lock.json",
-  "yarn.lock", ".gitattributes",
+  "yarn.lock", ".gitattributes", ".npmignore",
 ]);
-// 这些即使已存在也不覆盖
-// 注意：assets/groups.json 是**本机真实配置**（含内部文档 ID，被 .gitignore 排除）。
-// 无论目标是否存在，都绝不能从源目录拷过去 —— 否则在「自己有真实配置的人」机器上
-// 装到别处时会把内部 ID 泄出去。一律跳过，只在目标缺失时用 sample 生成。
-const ALWAYS_SKIP = new Set([
-  path.join("assets", "groups.json"),
-  "mybatch.json",
-]);
+// 按**文件名**硬跳过：这两个是本机真实配置（含内部文档 ID），
+// 只要源目录里有（开发者本机就有），无论目标存不存在都不能拷。
+// 用 basename 而不是相对路径 —— 防止哪天目录结构变了、或嵌套目录里出现同名文件时漏网。
+const SKIP_BASENAME = new Set(["groups.json", "mybatch.json"]);
 
 function log(s = "") {
   process.stdout.write(s + "\n");
@@ -78,7 +74,7 @@ function copyTree(src, dest, relBase = "") {
     const rel = path.join(relBase, e.name);
     if (!relBase && SKIP_TOP.has(e.name)) continue;
     if (e.name === "__pycache__") continue;
-    if (ALWAYS_SKIP.has(rel)) continue;
+    if (SKIP_BASENAME.has(e.name)) continue;
 
     const from = path.join(src, e.name);
     const to = path.join(dest, rel);

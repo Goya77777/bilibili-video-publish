@@ -9,7 +9,8 @@
     "SKILL.md",
     "README.md",
     "LICENSE",
-    "assets",
+    "assets/config.sample.json",
+    "assets/groups.sample.json",
     "references",
     "scripts",
     "bin"

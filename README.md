@@ -205,6 +205,27 @@ python bili_publish.py titles --config mybatch.json --import x_titles.csv # 写�
 - 「无敌 / 天花板 / 顶级 / 全网 / 史上最 / 绝对 / 必看」
 - 标题 ≤ 80 字、同批次不重复
 
+## 本机配置不会外泄（三道防线）
+
+`assets/groups.json` 和 `mybatch.json` 是本机真实配置（含内部文档 ID、账户/MID），**任何一条路径都不该把它们带出去**。
+这个仓库做了三道防线，且都实测过：
+
+| 防线 | 做法 | 实测结论 |
+|---|---|---|
+| **1. 不进 git** | `.gitignore` 排除这两个文件 | `git ls-files` 里只有 `*.sample.json`；`sync.sh` 一旦发现 `groups.json` 被暂存就**直接中止**（实测拦截成功，HEAD 不动） |
+| **2. 不进 npm 包** | `package.json` 的 `files` **只列两个 sample**（不写整个 `assets` 目录）+ `.npmignore` 兜底 | 用带标记的假配置实测：`npm pack` 产物 14 个文件，**不含** `assets/groups.json`；解开 tarball 全量扫描 0 命中 |
+| **3. 安装器不拷** | `bin/install.js` 按**文件名**（basename）硬跳过 `groups.json` / `mybatch.json`，只在目标缺失时从 sample 生成 | 在「带真实配置的检出目录」里跑安装，产出目录全量扫描 0 命中，目标 `groups.json` 只有 sample 的占位键 |
+
+> 特别注意第 2 条：`files` 若写成 `"assets"`（整个目录），npm 会把目录里**被 gitignore 的真实配置一起打进包**——
+> 这个坑我们踩过并修了，所以现在是逐个文件列举。自己 fork 后改 `files` 时别图省事写目录。
+
+提交前自检（推荐养成习惯）：
+
+```bash
+git ls-files | grep -E 'groups\.json|mybatch\.json' && echo '⚠️ 有真实配置进仓库了' || echo '✔ 干净'
+npm pack --dry-run --json | grep -E 'groups\.json|mybatch\.json' && echo '⚠️ 有配置进包了' || echo '✔ 干净'
+```
+
 ## 更新与同步
 
 本地改完直接：

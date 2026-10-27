@@ -1,0 +1,24 @@
+# 本机真实配置 —— 绝不能被 npm 打包/发布出去（含内部文档 ID）
+# 注意：package.json 的 files 用白名单只列了两个 sample，这里是第二道防线。
+assets/groups.json
+mybatch.json
+
+# 批次产出
+*_record.json
+*_record.csv
+*_record.tsv
+*_titles.csv
+*_titles.tsv
+*_run.json
+*_plan.json
+*_inventory.json
+*_dedupe.json
+*_manifest.json
+*_expected.json
+*_tdocs_cells.json
+*_verify.txt
+
+# 构建/缓存
+__pycache__/
+*.py[cod]
+node_modules/
