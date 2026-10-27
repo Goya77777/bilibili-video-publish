@@ -32,12 +32,73 @@ scan → plan → dedupe → manifest → upload → record → tdocs_fill → v
 
 ## 安装
 
+这是一个 **WorkBuddy skill**（本质是「一个目录：`SKILL.md` + `scripts/`」），所以安装 = **把仓库放到 skills 目录下**。
+
+技能目录：`~/.workbuddy/skills/<技能名>/`
+Windows 对应：`%USERPROFILE%\.workbuddy\skills\<技能名>\`
+
+### 方式一：git clone（推荐，后续能 `git pull` 更新）
+
 ```bash
-git clone https://github.com/Goya77777/bilibili-video-publish.git
-cp -r bilibili-video-publish ~/.workbuddy/skills/     # 作为 WorkBuddy skill 使用
+# macOS / Linux
+git clone https://github.com/Goya77777/bilibili-video-publish.git \
+  ~/.workbuddy/skills/bilibili-video-publish
 ```
 
-只需要 Python 3.9+（Windows 上投稿环节还需要 PowerShell 5.1+）。
+```powershell
+# Windows PowerShell
+git clone https://github.com/Goya77777/bilibili-video-publish.git `
+  "$env:USERPROFILE\.workbuddy\skills\bilibili-video-publish"
+```
+
+### 方式二：npx degit（npm 系命令，不要 git 历史）
+
+```bash
+npx degit Goya77777/bilibili-video-publish "$HOME/.workbuddy/skills/bilibili-video-publish"
+```
+
+### 方式三：下载 ZIP
+
+网页右上 **Code → Download ZIP** → 解压后把文件夹**改名**为 `bilibili-video-publish`，放进 `~/.workbuddy/skills/`。
+
+> 三种方式装出来的目录结构必须一致：`bilibili-video-publish/SKILL.md` 直接在 skills 下，**不要多套一层**
+> （`skills/bilibili-video-publish/bilibili-video-publish/SKILL.md` 是装错了，技能不会被识别）。
+
+### 装完还要做三件事（光拷文件不够）
+
+```bash
+cd ~/.workbuddy/skills/bilibili-video-publish
+cp assets/groups.sample.json assets/groups.json    # 1) 填你自己的腾讯文档 fileId / sheetId
+cp assets/config.sample.json mybatch.json          # 2) 建批次配置
+```
+
+3）授权腾讯文档（走官方 `tencent-docs` skill 的 `setup.sh`，输出 `READY` 即可）：
+
+```bash
+bash "<官方 tencent-docs skill 目录>/setup.sh" tdoc_check_and_start_auth
+```
+
+### 验证装好了
+
+```bash
+cd ~/.workbuddy/skills/bilibili-video-publish/scripts
+python bili_publish.py --help      # 能看到 scan/plan/titles/... 说明脚本可用
+python bili_publish.py groups      # 能列出你填的运营组，说明配置读到了
+```
+
+依赖：**Python 3.9+**（纯标准库，无需 pip install）；Windows 上投稿环节还需要 PowerShell 5.1+。
+
+### 能不能用 npm 安装？
+
+| 方式 | 可用 | 说明 |
+|---|---|---|
+| `npm install bilibili-video-publish` | ❌ | **没有发布到 npm registry**，也不打算发 |
+| `npx degit Goya77777/... <目标目录>` | ✅ | npm 系工具，直接从 GitHub 拉文件，**无需发布**，就是上面的「方式二」 |
+| `npm install github:Goya77777/...` | ⚠️ 别用 | 只会装进 `node_modules/`，**不会注册成 skill**，等于没装 |
+| 发到 npm + `postinstall` 自动拷进 skills 目录 | ⚠️ 不建议 | 往全局应用目录写文件，容易踩权限和多版本问题，安装行为也不可预期 |
+
+为什么不做成 npm 包：这个 skill 是**给智能体读的目录 + Python 脚本**，不是能被 `require()` 的 JS 库。
+npm 安装的价值在于「拉依赖 + 注册 `bin`」，这里两者都不需要——`npx degit` 已经是最接近 npm 体验的装法了。
 
 ## 快速开始
 
