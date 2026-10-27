@@ -1,5 +1,10 @@
 # bilibili-video-publish
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+
+> 仓库：<https://github.com/Goya77777/bilibili-video-publish>
+
 批量把本地目录 / Windows 网络共享里的视频**投稿到 B站三连创意中心绑定的真实 UP 账号**，并把「投稿时间 / BVID / 原始文件名 / 品牌 / 项目」**回填到腾讯文档表格**。
 
 一条可复跑的流水线，每一步都落盘，中断可续跑：
