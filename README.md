@@ -86,7 +86,8 @@ python tdocs_fill.py --record mybatch_record.json --group 运营组名          
 │   ├── bili_publish.py            # 主 CLI
 │   ├── tdocs_fill.py              # 腾讯文档写入（mcporter 通道，按表头名映射 + 读回校验）
 │   ├── upload_bound_mid_archives.ps1
-│   └── sync.sh                    # 一条命令提交并推送到本仓库
+│   ├── sync.sh                    # 一条命令提交并推送到本仓库
+│   └── proxy_bridge.py            # 本地 HTTP→SOCKS5 桥（SOCKS-only 机器首次授权用）
 ├── assets/
 │   ├── config.sample.json
 │   └── groups.sample.json
@@ -113,7 +114,15 @@ python tdocs_fill.py --record mybatch_record.json --group 运营组名          
 ```
 
 它做 `git add -A → commit → pull --rebase → push`。
-首次 push 会弹 GitHub 授权（浏览器登录一次，之后缓存在凭据管理器里）。
+
+**首次 push** 需要授权。若机器只有 SOCKS5 代理，GCM（.NET）不认 socks5，先用桥过一次：
+
+```bash
+python scripts/proxy_bridge.py --push      # 起本地 HTTP→SOCKS5 桥并 push，弹窗登录一次
+git config --local http.proxy socks5://127.0.0.1:10808   # 授权成功后改回直连 SOCKS
+```
+
+之后 `./scripts/sync.sh` 直接可用。各类代理/鉴权坑见 [references/troubleshooting.md](references/troubleshooting.md)。
 
 ## License
 

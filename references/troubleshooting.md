@@ -91,3 +91,46 @@ B站稿件标题上限。截短，保留核心利益点。
 
 ### `标题重复`
 同一批次内两条同名。给其中一条换个切入角度（同集不同角度，别做同义改写，否则素材标题太像）。
+
+
+## 推送到 GitHub（代理 / 鉴权）
+
+### `CONNECT tunnel failed, response 502` / `schannel: server closed abruptly`
+环境里被注入了 `HTTP_PROXY=http://127.0.0.1:<某端口>`（IDE / 沙箱 / 终端工具常见），那个端口连不通 GitHub。
+排查：`env | grep -i proxy`；`netstat -ano | findstr LISTENING` 看本机真正在听的代理端口。
+处理：`env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY git push`，或给仓库配 `http.proxy`。
+
+### 直连 github.com 超时
+国内网络常见。本机若有 SOCKS5 代理（如 v2rayN 的 10808），给仓库配上：
+
+```bash
+git config --local http.proxy socks5://127.0.0.1:10808
+```
+
+### `ServicePointManager 不支持具有 socks5 方案的代理`
+**Git Credential Manager 是 .NET 实现，只支持 HTTP 代理，完全不认 socks5**；而 git 自己的传输层认 socks5h/socks5。两者需求冲突。
+处理（只在「还没有缓存凭据」的那一次需要）：
+
+```bash
+python scripts/proxy_bridge.py --push      # 起本地 HTTP→SOCKS5 桥，再 push
+```
+
+授权成功、凭据被缓存之后，改回 `http.proxy=socks5://...` 即可，后续 push 不再需要桥。
+
+### `could not read Password ... terminal prompts disabled` / `/dev/tty: No such device`
+非交互 shell（智能体、CI、无 TTY）里 GCM 无法弹窗，git 退回读 TTY。
+处理：用 `proxy_bridge.py --push`（脚本内设了 `GCM_INTERACTIVE=always`），或让用户在自己的终端里执行一次 push。
+
+### `Permission to <owner>/<repo>.git denied to <另一个账号>`
+凭据管理器里缓存的是**别的 GitHub 账号**，GCM 直接复用、压根不弹窗。
+处理：`GIT_TERMINAL_PROMPT=1 GCM_INTERACTIVE=always`，并指定用户名让旧凭据匹配不上：
+
+```bash
+git config --local credential.https://github.com.username <你的账号>
+```
+
+或 `git credential-manager github logout` 后再推。
+
+### 403 `Resource not accessible by integration`（用 GitHub 连接器建仓时）
+GitHub App 没有 administration 权限，**建不了仓库**。
+处理：让用户在网页上建空仓库（不要勾 README/gitignore/license），再用 git 推。
