@@ -134,6 +134,23 @@ function main() {
     log("  · mybatch.json 已存在，保留原样");
   }
 
+  // npm 打包会剔除 .gitignore，这里补一层最小保护：别让本机配置被 git 提交上去
+  const gi = path.join(target, ".gitignore");
+  if (!exists(gi)) {
+    fs.writeFileSync(gi, [
+      "# 本机真实配置（含内部文档 ID），不要提交",
+      "assets/groups.json",
+      "mybatch.json",
+      "*_record.json",
+      "*_record.csv",
+      "*_record.tsv",
+      "*_run.json",
+      "__pycache__/",
+      "",
+    ].join("\n"), "utf8");
+    log("  ✔ 已补 .gitignore（防止 groups.json / mybatch.json 被提交）");
+  }
+
   // 自检
   log("");
   const py = findPython();

@@ -1,5 +1,8 @@
 # 本机真实配置，不进仓库（含内部文档 ID / 组名 / 凭据路径）
 assets/groups.json
+mybatch.json
+*_titles.csv
+*_titles.tsv
 
 # 批次产出与运行时产物
 *_inventory.json
